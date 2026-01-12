@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clarity Oracle — Digital Pull</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 16px; background: #fff; color: #111; }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    p { margin: 0 0 14px; line-height: 1.35; }
+    .controls { display: grid; gap: 12px; padding: 12px; border: 1px solid #ddd; border-radius: 12px; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    label { font-size: 14px; }
+    input[type="range"] { width: 220px; }
+    button { padding: 10px 14px; border: 1px solid #111; background: #111; color: #fff; border-radius: 10px; cursor: pointer; }
+    button.secondary { background: #fff; color: #111; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+    .card { border: 1px solid #ddd; border-radius: 14px; padding: 14px; background: #fff; }
+    .meta { font-size: 12px; color: #555; margin-bottom: 6px; }
+    .title { font-weight: 800; letter-spacing: 0.4px; font-size: 16px; margin: 0 0 8px; text-transform: uppercase; }
+    .subtitle { font-size: 14px; margin: 0; color: #222; }
+    .history { margin-top: 16px; border-top: 1px solid #eee; padding-top: 12px; }
+    .history h2 { font-size: 16px; margin: 0 0 8px; }
+    .hist-item { font-size: 13px; color: #333; padding: 6px 0; border-bottom: 1px dashed #eee; }
+    .small { font-size: 12px; color: #555; }
+    .toggle { display: flex; gap: 8px; align-items: center; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Clarity Oracle — Digital Pull</h1>
+  <p class="small">
+    Take one breath. Ask your question. Notice your body first. Then draw 1–5 cards.
+    (Default behavior: cards return after each draw, so repeats are possible.)
+  </p>
+
+  <div class="controls">
+    <div class="row">
+      <label for="count">Cards to draw: <strong id="countLabel">1</strong></label>
+      <input id="count" type="range" min="1" max="5" value="1" />
+      <div class="toggle">
+        <input id="withReplacement" type="checkbox" checked />
+        <label for="withReplacement">Return cards after draw (allow repeats)</label>
+      </div>
+    </div>
+    <div class="row">
+      <button id="drawBtn">Draw</button>
+      <button id="resetBtn" class="secondary">Reset Session</button>
+      <span class="small" id="deckState"></span>
+    </div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="history">
+    <h2>Session History</h2>
+    <div id="history"></div>
+  </div>
+</div>
+
+<script>
+  // --- Deck definition (54 cards) ---
+  // Each card has: id (1–54), title (front), subtitle (small text), group.
+  const DECK = [
+    // Clear Signal (1–18)
+    {id:1,  group:"Clear Signal", title:"YES", subtitle:""},
+    {id:2,  group:"Clear Signal", title:"NO", subtitle:""},
+    {id:3,  group:"Clear Signal", title:"SOFT YES", subtitle:"Alignment is present, but not fully anchored."},
+    {id:4,  group:"Clear Signal", title:"SOFT NO", subtitle:"The body is gently pulling away."},
+    {id:5,  group:"Clear Signal", title:"CONDITIONAL YES", subtitle:"The response depends on timing, context, or support."},
+    {id:6,  group:"Clear Signal", title:"CONDITIONAL NO", subtitle:"The response may change if conditions shift."},
+    {id:7,  group:"Clear Signal", title:"NOT NOW", subtitle:"Timing is affecting the response."},
+    {id:8,  group:"Clear Signal", title:"PAUSE", subtitle:""},
+    {id:9,  group:"Clear Signal", title:"WAIT", subtitle:""},
+    {id:10, group:"Clear Signal", title:"PROCEED", subtitle:""},
+    {id:11, group:"Clear Signal", title:"STOP", subtitle:""},
+    {id:12, group:"Clear Signal", title:"OPEN", subtitle:"The body is receptive."},
+    {id:13, group:"Clear Signal", title:"CLOSED", subtitle:"The body is not receptive right now."},
+    {id:14, group:"Clear Signal", title:"NO CHARGE PRESENT", subtitle:"There is little or no energetic pull."},
+    {id:15, group:"Clear Signal", title:"IN RESONANCE", subtitle:"The body and question are moving together."},
+    {id:16, group:"Clear Signal", title:"OUT OF RESONANCE", subtitle:"The body is not matching the question."},
+    {id:17, group:"Clear Signal", title:"STABLE", subtitle:""},
+    {id:18, group:"Clear Signal", title:"NOT YET SETTLED", subtitle:"The response is still shifting."},
+
+    // Resistance & Distortion (19–36)
+    {id:19, group:"Resistance", title:"RESISTANCE PRESENT", subtitle:"The body is tightening or pulling away."},
+    {id:20, group:"Resistance", title:"EMOTIONAL ACTIVATION PRESENT", subtitle:"Emotion is participating in the response."},
+    {id:21, group:"Resistance", title:"EXPECTATION BIAS", subtitle:"An anticipated outcome is influencing perception."},
+    {id:22, group:"Resistance", title:"FEAR ACTIVATION PRESENT", subtitle:"Protective responses are active in the body."},
+    {id:23, group:"Resistance", title:"STRONG PREFERENCE PRESENT", subtitle:"Desire is leaning the response."},
+    {id:24, group:"Resistance", title:"COGNITIVE ACTIVITY PRESENT", subtitle:"Thoughts are active alongside sensation."},
+    {id:25, group:"Resistance", title:"BODY FATIGUE", subtitle:"Physical capacity is affecting clarity."},
+    {id:26, group:"Resistance", title:"CLARITY NOT PRESENT", subtitle:"The answer cannot be felt clearly right now."},
+    {id:27, group:"Resistance", title:"QUESTION TOO BROAD", subtitle:"The body cannot respond to multiple directions at once."},
+    {id:28, group:"Resistance", title:"QUESTION TOO LOADED", subtitle:"Multiple assumptions are shaping the response."},
+    {id:29, group:"Resistance", title:"CONFLICTING SIGNALS", subtitle:"Different sensations are responding at the same time."},
+    {id:30, group:"Resistance", title:"CONTEXT AFFECTING RESPONSE", subtitle:"Environment or timing is being registered by the body."},
+    {id:31, group:"Resistance", title:"EXTERNAL STIMULUS PRESENT", subtitle:"Something outside the body is being registered internally."},
+    {id:32, group:"Resistance", title:"REFLECTIVE RESPONSE PRESENT", subtitle:"The body is responding to reflection rather than inquiry."},
+    {id:33, group:"Resistance", title:"DEFENSIVE RESPONSE", subtitle:"Protective tension is shaping the response."},
+    {id:34, group:"Resistance", title:"AVOIDANCE", subtitle:"The body is redirecting attention away."},
+    {id:35, group:"Resistance", title:"GROUNDING HELPFUL", subtitle:"Clarity may increase with physical presence."},
+    {id:36, group:"Resistance", title:"INTEGRATION REQUIRED", subtitle:"The body is still processing information."},
+
+    // Refinement & Recalibration (37–54)
+    {id:37, group:"Refinement", title:"REPHRASE QUESTION", subtitle:"Different wording may allow a clearer body response."},
+    {id:38, group:"Refinement", title:"SIMPLIFY", subtitle:"Reducing complexity may increase clarity."},
+    {id:39, group:"Refinement", title:"ASK DIFFERENTLY", subtitle:"A new angle may increase clarity."},
+    {id:40, group:"Refinement", title:"CHECK YOUR BODY", subtitle:"Notice physical sensation before interpreting."},
+    {id:41, group:"Refinement", title:"RETURN TO BREATH", subtitle:"Breath may help the body settle."},
+    {id:42, group:"Refinement", title:"RELEASE EXPECTATION", subtitle:"Letting go of outcome may soften the response."},
+    {id:43, group:"Refinement", title:"COME BACK LATER", subtitle:"Clarity may increase with time."},
+    {id:44, group:"Refinement", title:"ASK WITH LESS ATTACHMENT", subtitle:"Emotional distance may increase clarity in the response."},
+    {id:45, group:"Refinement", title:"ASK FROM STILLNESS", subtitle:"Quiet presence may allow clearer sensation."},
+    {id:46, group:"Refinement", title:"SENSATION-LED QUESTION", subtitle:"Let physical sensation guide the inquiry."},
+    {id:47, group:"Refinement", title:"EMOTIVE LAYER PRESENT", subtitle:"Feeling is contributing to the response."},
+    {id:48, group:"Refinement", title:"NAME THE FEELING", subtitle:"Identifying sensation may clarify the response."},
+    {id:49, group:"Refinement", title:"TRUST FIRST RESPONSE", subtitle:"Initial sensation is often the clearest."},
+    {id:50, group:"Refinement", title:"NOTICE THE SHIFT", subtitle:"Movement in the response may be present."},
+    {id:51, group:"Refinement", title:"HOLD THE QUESTION", subtitle:"No immediate response is required."},
+    {id:52, group:"Refinement", title:"LET IT SETTLE", subtitle:"Clarity may emerge without effort."},
+    {id:53, group:"Refinement", title:"NO ANSWER IS AN ANSWER", subtitle:"Absence of response is still verifiable information."},
+    {id:54, group:"Refinement", title:"INTEGRATION IN PROGRESS", subtitle:"The body is still incorporating information."},
+  ];
+
+  // --- State ---
+  let available = [...DECK]; // only used when "Return cards after draw" is OFF
+  const history = [];
+
+  // --- Helpers ---
+  function sampleWithoutReplacement(arr, n) {
+    const copy = [...arr];
+    // Fisher–Yates shuffle
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, n);
+  }
+
+  function renderCards(cards) {
+    const el = document.getElementById("cards");
+    el.innerHTML = "";
+    cards.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div class="meta">#${c.id} • ${c.group}</div>
+        <div class="title">${c.title}</div>
+        ${c.subtitle ? `<p class="subtitle">${c.subtitle}</p>` : `<p class="subtitle"></p>`}
+      `;
+      el.appendChild(div);
+    });
+  }
+
+  function renderHistory() {
+    const el = document.getElementById("history");
+    el.innerHTML = "";
+    history.slice().reverse().forEach(item => {
+      const div = document.createElement("div");
+      div.className = "hist-item";
+      div.textContent = item;
+      el.appendChild(div);
+    });
+  }
+
+  function updateDeckState() {
+    const withReplacement = document.getElementById("withReplacement").checked;
+    const stateEl = document.getElementById("deckState");
+    if (withReplacement) {
+      stateEl.textContent = "Mode: Return after draw (repeats possible).";
+      document.getElementById("drawBtn").disabled = false;
+    } else {
+      stateEl.textContent = `Mode: Keep cards out (remaining in deck: ${available.length}).`;
+      document.getElementById("drawBtn").disabled = (available.length === 0);
+    }
+  }
+
+  // --- Events ---
+  document.getElementById("count").addEventListener("input", (e) => {
+    document.getElementById("countLabel").textContent = e.target.value;
+    updateDeckState();
+  });
+
+  document.getElementById("withReplacement").addEventListener("change", () => {
+    // when switching modes, reset available deck to avoid confusion
+    available = [...DECK];
+    renderCards([]);
+    history.push("— Mode changed (deck reset) —");
+    renderHistory();
+    updateDeckState();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    available = [...DECK];
+    renderCards([]);
+    history.length = 0;
+    renderHistory();
+    updateDeckState();
+  });
+
+  document.getElementById("drawBtn").addEventListener("click", () => {
+    const n = parseInt(document.getElementById("count").value, 10);
+    const withReplacement = document.getElementById("withReplacement").checked;
+
+    let drawn = [];
+    if (withReplacement) {
+      drawn = sampleWithoutReplacement(DECK, n); // sample unique in a single draw
+    } else {
+      const max = Math.min(n, available.length);
+      drawn = sampleWithoutReplacement(available, max);
+      // remove drawn from available
+      const drawnIds = new Set(drawn.map(c => c.id));
+      available = available.filter(c => !drawnIds.has(c.id));
+    }
+
+    renderCards(drawn);
+    history.push(`Draw (${drawn.length}): ` + drawn.map(c => `#${c.id} ${c.title}`).join(" • "));
+    renderHistory();
+    updateDeckState();
+  });
+
+  // init
+  updateDeckState();
+</script>
+</body>
+</html>
