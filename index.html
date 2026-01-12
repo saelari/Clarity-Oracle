@@ -26,6 +26,19 @@
     .hist-item { font-size: 13px; color: #333; padding: 6px 0; border-bottom: 1px dashed #eee; }
     .small { font-size: 12px; color: #555; }
     .toggle { display: flex; gap: 8px; align-items: center; }
+.listening {
+  margin-top: 14px;
+  font-size: 14px;
+  color: #555;
+  font-style: italic;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.listening.active {
+  display: block;
+  opacity: 1;
+}
+
   </style>
 </head>
 <body>
@@ -52,7 +65,9 @@
     </div>
   </div>
 
-  <div class="cards" id="cards"></div>
+<div id="listening" class="listening" style="display:none;">Listening…</div>
+<div class="cards" id="cards"></div>
+
 
   <div class="history">
     <h2>Session History</h2>
@@ -133,6 +148,20 @@
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+function showListening() {
+  const el = document.getElementById("listening");
+  el.style.display = "block";
+  requestAnimationFrame(() => el.classList.add("active"));
+}
+
+function hideListening() {
+  const el = document.getElementById("listening");
+  el.classList.remove("active");
+  setTimeout(() => {
+    el.style.display = "none";
+  }, 250);
+}
+
 
 // Returns an "intuitive" pause duration in ms.
 // Skewed short, with occasional longer waits.
@@ -263,11 +292,16 @@ function shouldContinueAfterCard(drawnCount) {
 
   // Continue drawing with "until settled" logic
   while (shouldContinueAfterCard(drawn.length) && pool.length > 0) {
-    const pause = intuitivePauseMs();
-    await sleep(pause);
-    drawn.push(drawOneFromPool());
-    renderCards(drawn);
-  }
+  showListening();
+  const pause = intuitivePauseMs();
+  await sleep(pause);
+  hideListening();
+  drawn.push(drawOneFromPool());
+  renderCards(drawn);
+hideListening();
+
+}
+
 
   // If NOT returning cards after draw, remove drawn from available deck
   if (!withReplacement) {
