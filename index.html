@@ -130,6 +130,36 @@
   const history = [];
 
   // --- Helpers ---
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Returns an "intuitive" pause duration in ms.
+// Skewed short, with occasional longer waits.
+function intuitivePauseMs() {
+  const r = Math.random();
+
+  // ~70%: quick blip (150–900ms)
+  if (r < 0.70) return 150 + Math.random() * 750;
+
+  // ~22%: medium (1000–3000ms)
+  if (r < 0.92) return 1000 + Math.random() * 2000;
+
+  // ~8%: long (4000–10000ms)
+  return 4000 + Math.random() * 6000;
+}
+
+// Decide whether to continue drawing another card (Option B: "until settled")
+function shouldContinueAfterCard(drawnCount) {
+  // Hard stop at 5
+  if (drawnCount >= 5) return false;
+
+  // Weighted continuation chance decreases as more cards appear
+  // 1→2: 55%, 2→3: 35%, 3→4: 20%, 4→5: 10%
+  const thresholds = [0.55, 0.35, 0.20, 0.10];
+  return Math.random() < thresholds[drawnCount - 1];
+}
+
   function sampleWithoutReplacement(arr, n) {
     const copy = [...arr];
     // Fisher–Yates shuffle
@@ -201,26 +231,58 @@
     updateDeckState();
   });
 
-  document.getElementById("drawBtn").addEventListener("click", () => {
-    const n = parseInt(document.getElementById("count").value, 10);
-    const withReplacement = document.getElementById("withReplacement").checked;
+ document.getElementById("drawBtn").addEventListener("click", async () => {
+  const withReplacement = document.getElementById("withReplacement").checked;
 
-    let drawn = [];
-    if (withReplacement) {
-      drawn = sampleWithoutReplacement(DECK, n); // sample unique in a single draw
-    } else {
-      const max = Math.min(n, available.length);
-      drawn = sampleWithoutReplacement(available, max);
-      // remove drawn from available
-      const drawnIds = new Set(drawn.map(c => c.id));
-      available = available.filter(c => !drawnIds.has(c.id));
-    }
+  // Disable draw while the sequence is running
+  const drawBtn = document.getElementById("drawBtn");
+  drawBtn.disabled = true;
 
+  // We'll build the draw one card at a time up to 5.
+  let drawn = [];
+  let pool = withReplacement ? [...DECK] : [...available];
+
+  function drawOneFromPool() {
+    // pick one uniformly from pool
+    const idx = Math.floor(Math.random() * pool.length);
+    const card = pool[idx];
+    // remove from pool for this draw sequence (prevents duplicates within one pull)
+    pool.splice(idx, 1);
+    return card;
+  }
+
+  // Always draw at least 1 card
+  if (pool.length === 0) {
+    // nothing to draw
+    drawBtn.disabled = false;
+    return;
+  }
+
+  drawn.push(drawOneFromPool());
+  renderCards(drawn);
+
+  // Continue drawing with "until settled" logic
+  while (shouldContinueAfterCard(drawn.length) && pool.length > 0) {
+    const pause = intuitivePauseMs();
+    await sleep(pause);
+    drawn.push(drawOneFromPool());
     renderCards(drawn);
-    history.push(`Draw (${drawn.length}): ` + drawn.map(c => `#${c.id} ${c.title}`).join(" • "));
-    renderHistory();
-    updateDeckState();
-  });
+  }
+
+  // If NOT returning cards after draw, remove drawn from available deck
+  if (!withReplacement) {
+    const drawnIds = new Set(drawn.map(c => c.id));
+    available = available.filter(c => !drawnIds.has(c.id));
+  }
+
+  history.push(`Draw (${drawn.length}): ` + drawn.map(c => `#${c.id} ${c.title}`).join(" • "));
+  renderHistory();
+  updateDeckState();
+
+  // Re-enable draw (unless deck is empty in no-replacement mode)
+  drawBtn.disabled = (!withReplacement && available.length === 0);
+});
+
 
   // init
   updateDeckState();
