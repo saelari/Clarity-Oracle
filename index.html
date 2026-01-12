@@ -5,57 +5,109 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Clarity Oracle — Digital Pull</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 16px; background: #fff; color: #111; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #fff;
+      color: #111;
+    }
     .wrap { max-width: 960px; margin: 0 auto; }
     h1 { margin: 0 0 8px; font-size: 22px; }
     p { margin: 0 0 14px; line-height: 1.35; }
-    .controls { display: grid; gap: 12px; padding: 12px; border: 1px solid #ddd; border-radius: 12px; }
-    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
     label { font-size: 14px; }
-    input[type="range"] { width: 220px; }
-    button { padding: 10px 14px; border: 1px solid #111; background: #111; color: #fff; border-radius: 10px; cursor: pointer; }
+    button {
+      padding: 10px 14px;
+      border: 1px solid #111;
+      background: #111;
+      color: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+    }
     button.secondary { background: #fff; color: #111; }
     button:disabled { opacity: 0.55; cursor: not-allowed; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
-    .card { border: 1px solid #ddd; border-radius: 14px; padding: 14px; background: #fff; }
-    .meta { font-size: 12px; color: #555; margin-bottom: 6px; }
-    .title { font-weight: 800; letter-spacing: 0.4px; font-size: 16px; margin: 0 0 8px; text-transform: uppercase; }
-    .subtitle { font-size: 14px; margin: 0; color: #222; }
-    .history { margin-top: 16px; border-top: 1px solid #eee; padding-top: 12px; }
-    .history h2 { font-size: 16px; margin: 0 0 8px; }
-    .hist-item { font-size: 13px; color: #333; padding: 6px 0; border-bottom: 1px dashed #eee; }
-    .small { font-size: 12px; color: #555; }
-    .toggle { display: flex; gap: 8px; align-items: center; }
-.listening {
-  margin-top: 14px;
-  font-size: 14px;
-  color: #555;
-  font-style: italic;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-.listening.active {
-  display: block;
-  opacity: 1;
-}
 
+    .small { font-size: 12px; color: #555; }
+
+    .listening {
+      margin-top: 14px;
+      font-size: 14px;
+      color: #555;
+      font-style: italic;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      display: none;
+    }
+    .listening.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+    .meta { font-size: 12px; color: #555; margin-bottom: 6px; }
+    .title {
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      font-size: 16px;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+    }
+    .subtitle { font-size: 14px; margin: 0; color: #222; min-height: 18px; }
+
+    .history {
+      margin-top: 16px;
+      border-top: 1px solid #eee;
+      padding-top: 12px;
+    }
+    .history h2 { font-size: 16px; margin: 0 0 8px; }
+    .hist-item {
+      font-size: 13px;
+      color: #333;
+      padding: 6px 0;
+      border-bottom: 1px dashed #eee;
+    }
+
+    .toggle { display: flex; gap: 8px; align-items: center; }
   </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Clarity Oracle — Digital Pull</h1>
   <p class="small">
-    Take one breath. Ask your question. Notice your body first. Then draw 1–5 cards.
-    (Default behavior: cards return after each draw, so repeats are possible.)
+    Take one breath. Ask your question. Notice your body first. Then draw.
+    (Default: cards return after each draw, so repeats are possible across draws.)
   </p>
 
   <div class="controls">
     <div class="row">
-      <label for="count">Cards to draw: <strong id="countLabel">1</strong></label>
-      <input id="count" type="range" min="1" max="5" value="1" />
       <div class="toggle">
         <input id="withReplacement" type="checkbox" checked />
-        <label for="withReplacement">Return cards after draw (allow repeats)</label>
+        <label for="withReplacement">Return cards after draw (allow repeats across draws)</label>
       </div>
     </div>
     <div class="row">
@@ -65,9 +117,8 @@
     </div>
   </div>
 
-<div id="listening" class="listening" style="display:none;">Listening…</div>
-<div class="cards" id="cards"></div>
-
+  <div id="listening" class="listening">Listening…</div>
+  <div class="cards" id="cards"></div>
 
   <div class="history">
     <h2>Session History</h2>
@@ -77,7 +128,6 @@
 
 <script>
   // --- Deck definition (54 cards) ---
-  // Each card has: id (1–54), title (front), subtitle (small text), group.
   const DECK = [
     // Clear Signal (1–18)
     {id:1,  group:"Clear Signal", title:"YES", subtitle:""},
@@ -145,58 +195,37 @@
   const history = [];
 
   // --- Helpers ---
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-function showListening() {
-  const el = document.getElementById("listening");
-  el.style.display = "block";
-  requestAnimationFrame(() => el.classList.add("active"));
-}
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
-function hideListening() {
-  const el = document.getElementById("listening");
-  el.classList.remove("active");
-  setTimeout(() => {
-    el.style.display = "none";
-  }, 250);
-}
+  // Intuitive pause, skewed short with rare longer waits (up to 10 seconds)
+  function intuitivePauseMs() {
+    const r = Math.random();
+    if (r < 0.70) return 150 + Math.random() * 750;      // 150–900ms
+    if (r < 0.92) return 1000 + Math.random() * 2000;    // 1–3s
+    return 4000 + Math.random() * 6000;                  // 4–10s
+  }
 
+  // Option B: "draw until settled"
+  function shouldContinueAfterCard(drawnCount) {
+    if (drawnCount >= 5) return false;
+    const thresholds = [0.55, 0.35, 0.20, 0.10]; // 1→2, 2→3, 3→4, 4→5
+    return Math.random() < thresholds[drawnCount - 1];
+  }
 
-// Returns an "intuitive" pause duration in ms.
-// Skewed short, with occasional longer waits.
-function intuitivePauseMs() {
-  const r = Math.random();
+  function showListening() {
+    const el = document.getElementById("listening");
+    // Ensure it's visible, then animate opacity
+    el.style.display = "block";
+    requestAnimationFrame(() => el.classList.add("active"));
+  }
 
-  // ~70%: quick blip (150–900ms)
-  if (r < 0.70) return 150 + Math.random() * 750;
-
-  // ~22%: medium (1000–3000ms)
-  if (r < 0.92) return 1000 + Math.random() * 2000;
-
-  // ~8%: long (4000–10000ms)
-  return 4000 + Math.random() * 6000;
-}
-
-// Decide whether to continue drawing another card (Option B: "until settled")
-function shouldContinueAfterCard(drawnCount) {
-  // Hard stop at 5
-  if (drawnCount >= 5) return false;
-
-  // Weighted continuation chance decreases as more cards appear
-  // 1→2: 55%, 2→3: 35%, 3→4: 20%, 4→5: 10%
-  const thresholds = [0.55, 0.35, 0.20, 0.10];
-  return Math.random() < thresholds[drawnCount - 1];
-}
-
-  function sampleWithoutReplacement(arr, n) {
-    const copy = [...arr];
-    // Fisher–Yates shuffle
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy.slice(0, n);
+  function hideListening() {
+    const el = document.getElementById("listening");
+    el.classList.remove("active");
+    // After opacity transition, hide
+    setTimeout(() => { el.style.display = "none"; }, 260);
   }
 
   function renderCards(cards) {
@@ -228,98 +257,92 @@ function shouldContinueAfterCard(drawnCount) {
   function updateDeckState() {
     const withReplacement = document.getElementById("withReplacement").checked;
     const stateEl = document.getElementById("deckState");
+    const drawBtn = document.getElementById("drawBtn");
+
     if (withReplacement) {
-      stateEl.textContent = "Mode: Return after draw (repeats possible).";
-      document.getElementById("drawBtn").disabled = false;
+      stateEl.textContent = "Mode: Return after draw (repeats possible across draws).";
+      drawBtn.disabled = false;
     } else {
       stateEl.textContent = `Mode: Keep cards out (remaining in deck: ${available.length}).`;
-      document.getElementById("drawBtn").disabled = (available.length === 0);
+      drawBtn.disabled = (available.length === 0);
     }
   }
 
   // --- Events ---
-  document.getElementById("count").addEventListener("input", (e) => {
-    document.getElementById("countLabel").textContent = e.target.value;
-    updateDeckState();
-  });
-
   document.getElementById("withReplacement").addEventListener("change", () => {
-    // when switching modes, reset available deck to avoid confusion
+    // Reset deck to avoid confusion when switching modes
     available = [...DECK];
-    renderCards([]);
     history.push("— Mode changed (deck reset) —");
     renderHistory();
     updateDeckState();
+    // Leave cards visible; user likes it
   });
 
   document.getElementById("resetBtn").addEventListener("click", () => {
     available = [...DECK];
-    renderCards([]);
     history.length = 0;
     renderHistory();
+    hideListening();
+    // Optional: clear cards on reset (feel free to change)
+    renderCards([]);
     updateDeckState();
   });
 
- document.getElementById("drawBtn").addEventListener("click", async () => {
-  const withReplacement = document.getElementById("withReplacement").checked;
+  document.getElementById("drawBtn").addEventListener("click", async () => {
+    const withReplacement = document.getElementById("withReplacement").checked;
+    const drawBtn = document.getElementById("drawBtn");
+    drawBtn.disabled = true;
+    hideListening();
 
-  // Disable draw while the sequence is running
-  const drawBtn = document.getElementById("drawBtn");
-  drawBtn.disabled = true;
+    // Build a pool for this draw. If withReplacement, draw from full DECK each time.
+    // If not, draw from available.
+    let drawn = [];
+    let pool = withReplacement ? [...DECK] : [...available];
 
-  // We'll build the draw one card at a time up to 5.
-  let drawn = [];
-  let pool = withReplacement ? [...DECK] : [...available];
+    function drawOneFromPool() {
+      const idx = Math.floor(Math.random() * pool.length);
+      const card = pool[idx];
+      pool.splice(idx, 1); // prevent duplicates within this pull
+      return card;
+    }
 
-  function drawOneFromPool() {
-    // pick one uniformly from pool
-    const idx = Math.floor(Math.random() * pool.length);
-    const card = pool[idx];
-    // remove from pool for this draw sequence (prevents duplicates within one pull)
-    pool.splice(idx, 1);
-    return card;
-  }
+    if (pool.length === 0) {
+      updateDeckState();
+      return;
+    }
 
-  // Always draw at least 1 card
-  if (pool.length === 0) {
-    // nothing to draw
-    drawBtn.disabled = false;
-    return;
-  }
+    // Always draw at least 1 card immediately
+    drawn.push(drawOneFromPool());
+    renderCards(drawn);
 
-  drawn.push(drawOneFromPool());
-  renderCards(drawn);
+    // Continue until "settled" (max 5), showing Listening... during pauses
+    while (shouldContinueAfterCard(drawn.length) && pool.length > 0) {
+      showListening();
+      await sleep(intuitivePauseMs());
+      hideListening();
+      drawn.push(drawOneFromPool());
+      renderCards(drawn);
+    }
+    hideListening();
 
-  // Continue drawing with "until settled" logic
-  while (shouldContinueAfterCard(drawn.length) && pool.length > 0) {
-  showListening();
-  const pause = intuitivePauseMs();
-  await sleep(pause);
-  hideListening();
-  drawn.push(drawOneFromPool());
-  renderCards(drawn);
-hideListening();
+    // If "keep cards out" mode, remove drawn from available deck
+    if (!withReplacement) {
+      const drawnIds = new Set(drawn.map(c => c.id));
+      available = available.filter(c => !drawnIds.has(c.id));
+    }
 
-}
+    history.push(`Draw (${drawn.length}): ` + drawn.map(c => `#${c.id} ${c.title}`).join(" • "));
+    renderHistory();
+    updateDeckState();
 
-
-  // If NOT returning cards after draw, remove drawn from available deck
-  if (!withReplacement) {
-    const drawnIds = new Set(drawn.map(c => c.id));
-    available = available.filter(c => !drawnIds.has(c.id));
-  }
-
-  history.push(`Draw (${drawn.length}): ` + drawn.map(c => `#${c.id} ${c.title}`).join(" • "));
-  renderHistory();
-  updateDeckState();
-
-  // Re-enable draw (unless deck is empty in no-replacement mode)
-  drawBtn.disabled = (!withReplacement && available.length === 0);
-});
-
+    // Re-enable draw if possible
+    drawBtn.disabled = (!withReplacement && available.length === 0);
+  });
 
   // init
   updateDeckState();
+  renderCards([]); // start empty
 </script>
 </body>
 </html>
+
