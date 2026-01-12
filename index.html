@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Clarity Oracle</title>
   <style>
     body {
@@ -44,6 +44,17 @@
       transform: scale(1.02);
     }
 
+    .card-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+
+    .card-meaning {
+      font-size: 0.95em;
+      color: #333;
+    }
+
     button {
       background-color: #111;
       color: white;
@@ -76,74 +87,37 @@
   <button onclick="drawCards()">Draw</button>
   <div id="output"></div>
 
-<script>
-  // --- Deck definition (54 cards) ---
-  const DECK = [
-    // Clear Signal (1–18)
-    {id:1,  group:"Clear Signal", title:"YES", subtitle:""},
-    {id:2,  group:"Clear Signal", title:"NO", subtitle:""},
-    {id:3,  group:"Clear Signal", title:"SOFT YES", subtitle:"Alignment is present, but not fully anchored."},
-    {id:4,  group:"Clear Signal", title:"SOFT NO", subtitle:"The body is gently pulling away."},
-    {id:5,  group:"Clear Signal", title:"CONDITIONAL YES", subtitle:"The response depends on timing, context, or support."},
-    {id:6,  group:"Clear Signal", title:"CONDITIONAL NO", subtitle:"The response may change if conditions shift."},
-    {id:7,  group:"Clear Signal", title:"NOT NOW", subtitle:"Timing is affecting the response."},
-    {id:8,  group:"Clear Signal", title:"PAUSE", subtitle:""},
-    {id:9,  group:"Clear Signal", title:"WAIT", subtitle:""},
-    {id:10, group:"Clear Signal", title:"PROCEED", subtitle:""},
-    {id:11, group:"Clear Signal", title:"STOP", subtitle:""},
-    {id:12, group:"Clear Signal", title:"OPEN", subtitle:"The body is receptive."},
-    {id:13, group:"Clear Signal", title:"CLOSED", subtitle:"The body is not receptive right now."},
-    {id:14, group:"Clear Signal", title:"NO CHARGE PRESENT", subtitle:"There is little or no energetic pull."},
-    {id:15, group:"Clear Signal", title:"IN RESONANCE", subtitle:"The body and question are moving together."},
-    {id:16, group:"Clear Signal", title:"OUT OF RESONANCE", subtitle:"The body is not matching the question."},
-    {id:17, group:"Clear Signal", title:"STABLE", subtitle:""},
-    {id:18, group:"Clear Signal", title:"NOT YET SETTLED", subtitle:"The response is still shifting."},
+  <script>
+    const cards = [
+      { title: "Yes", meaning: "Clear internal alignment and resonance detected." },
+      { title: "No", meaning: "Clear resistance or misalignment detected in the body." },
+      { title: "Maybe", meaning: "Inconclusive; either internal conflict or shifting state." },
+      { title: "Rephrase and Try Again", meaning: "The question lacks clarity or specificity." },
+      { title: "Clarity Not Present", meaning: "Conditions do not currently support a clean read." },
+      { title: "Grounding Helpful", meaning: "Body may be too activated or dissociated to discern." },
+      { title: "Body Open to Receive", meaning: "Somatic receptivity is available and present." },
+      { title: "Body Closed to Signal", meaning: "Defenses, stress, or override may be blocking the message." },
+      { title: "Cognitive Activity Present", meaning: "Mental processing may be overriding subtle input." },
+      { title: "Emotional Processing Active", meaning: "Emotions may be coloring the signal or amplifying noise." },
+      { title: "External Stimulus Registered", meaning: "A signal was picked up — but its source may be external." },
+      { title: "Reflective Response Present", meaning: "You may be reacting to someone else’s field or projection." },
+      { title: "Subtle Resonance Present", meaning: "A quiet, affirming somatic cue is available beneath the surface." },
+      { title: "Physical Signal Present", meaning: "Tingling, shifting, or direct sensations have activated." },
+      { title: "Verifiable Signal Available", meaning: "With stillness and focus, you could confirm this somatically." },
+      { title: "Movement in Response", meaning: "Body initiated or wanted to move as part of the answer." },
+      { title: "Stillness Confirms", meaning: "A subtle stillness confirms truth within the body." },
+      { title: "Check Question Framing", meaning: "Something about the phrasing may be splitting your read." },
+      { title: "Clear Yes With Nuance", meaning: "Yes — but the body is also surfacing qualifiers or terms." },
+      { title: "Clear No With Nuance", meaning: "No — but this may be circumstantial, not absolute." },
+      { title: "Somatic Contradiction", meaning: "Different body parts are signaling different things." },
+      { title: "Mirror Effect", meaning: "You’re perceiving through another’s field — check projection." },
+      { title: "Discernment Required", meaning: "Answer not directly given — you’re being asked to *feel*." }
+    ];
 
-    // Resistance & Distortion (19–36)
-    {id:19, group:"Resistance", title:"RESISTANCE PRESENT", subtitle:"The body is tightening or pulling away."},
-    {id:20, group:"Resistance", title:"EMOTIONAL ACTIVATION PRESENT", subtitle:"Emotion is participating in the response."},
-    {id:21, group:"Resistance", title:"EXPECTATION BIAS", subtitle:"An anticipated outcome is influencing perception."},
-    {id:22, group:"Resistance", title:"FEAR ACTIVATION PRESENT", subtitle:"Protective responses are active in the body."},
-    {id:23, group:"Resistance", title:"STRONG PREFERENCE PRESENT", subtitle:"Desire is leaning the response."},
-    {id:24, group:"Resistance", title:"COGNITIVE ACTIVITY PRESENT", subtitle:"Thoughts are active alongside sensation."},
-    {id:25, group:"Resistance", title:"BODY FATIGUE", subtitle:"Physical capacity is affecting clarity."},
-    {id:26, group:"Resistance", title:"CLARITY NOT PRESENT", subtitle:"The answer cannot be felt clearly right now."},
-    {id:27, group:"Resistance", title:"QUESTION TOO BROAD", subtitle:"The body cannot respond to multiple directions at once."},
-    {id:28, group:"Resistance", title:"QUESTION TOO LOADED", subtitle:"Multiple assumptions are shaping the response."},
-    {id:29, group:"Resistance", title:"CONFLICTING SIGNALS", subtitle:"Different sensations are responding at the same time."},
-    {id:30, group:"Resistance", title:"CONTEXT AFFECTING RESPONSE", subtitle:"Environment or timing is being registered by the body."},
-    {id:31, group:"Resistance", title:"EXTERNAL STIMULUS PRESENT", subtitle:"Something outside the body is being registered internally."},
-    {id:32, group:"Resistance", title:"REFLECTIVE RESPONSE PRESENT", subtitle:"The body is responding to reflection rather than inquiry."},
-    {id:33, group:"Resistance", title:"DEFENSIVE RESPONSE", subtitle:"Protective tension is shaping the response."},
-    {id:34, group:"Resistance", title:"AVOIDANCE", subtitle:"The body is redirecting attention away."},
-    {id:35, group:"Resistance", title:"GROUNDING HELPFUL", subtitle:"Clarity may increase with physical presence."},
-    {id:36, group:"Resistance", title:"INTEGRATION REQUIRED", subtitle:"The body is still processing information."},
-
-    // Refinement & Recalibration (37–54)
-    {id:37, group:"Refinement", title:"REPHRASE QUESTION", subtitle:"Different wording may allow a clearer body response."},
-    {id:38, group:"Refinement", title:"SIMPLIFY", subtitle:"Reducing complexity may increase clarity."},
-    {id:39, group:"Refinement", title:"ASK DIFFERENTLY", subtitle:"A new angle may increase clarity."},
-    {id:40, group:"Refinement", title:"CHECK YOUR BODY", subtitle:"Notice physical sensation before interpreting."},
-    {id:41, group:"Refinement", title:"RETURN TO BREATH", subtitle:"Breath may help the body settle."},
-    {id:42, group:"Refinement", title:"RELEASE EXPECTATION", subtitle:"Letting go of outcome may soften the response."},
-    {id:43, group:"Refinement", title:"COME BACK LATER", subtitle:"Clarity may increase with time."},
-    {id:44, group:"Refinement", title:"ASK WITH LESS ATTACHMENT", subtitle:"Emotional distance may increase clarity in the response."},
-    {id:45, group:"Refinement", title:"ASK FROM STILLNESS", subtitle:"Quiet presence may allow clearer sensation."},
-    {id:46, group:"Refinement", title:"SENSATION-LED QUESTION", subtitle:"Let physical sensation guide the inquiry."},
-    {id:47, group:"Refinement", title:"EMOTIVE LAYER PRESENT", subtitle:"Feeling is contributing to the response."},
-    {id:48, group:"Refinement", title:"NAME THE FEELING", subtitle:"Identifying sensation may clarify the response."},
-    {id:49, group:"Refinement", title:"TRUST FIRST RESPONSE", subtitle:"Initial sensation is often the clearest."},
-    {id:50, group:"Refinement", title:"NOTICE THE SHIFT", subtitle:"Movement in the response may be present."},
-    {id:51, group:"Refinement", title:"HOLD THE QUESTION", subtitle:"No immediate response is required."},
-    {id:52, group:"Refinement", title:"LET IT SETTLE", subtitle:"Clarity may emerge without effort."},
-    {id:53, group:"Refinement", title:"NO ANSWER IS AN ANSWER", subtitle:"Absence of response is still verifiable information."},
-    {id:54, group:"Refinement", title:"INTEGRATION IN PROGRESS", subtitle:"The body is still incorporating information."},
-  ];
-
-  
     const drawCards = () => {
       const output = document.getElementById("output");
       output.innerHTML = "";
+
       const listeningLine = document.createElement("div");
       listeningLine.textContent = "Listening...";
       listeningLine.classList.add("card", "fade");
@@ -155,17 +129,27 @@
 
       setTimeout(() => {
         output.innerHTML = "";
-        const drawn = [];
 
+        const drawn = [];
         while (drawn.length < drawCount) {
-          const card = allCards[Math.floor(Math.random() * allCards.length)];
+          const card = cards[Math.floor(Math.random() * cards.length)];
           if (!drawn.includes(card)) drawn.push(card);
         }
 
-        drawn.forEach(text => {
+        drawn.forEach(({ title, meaning }) => {
           const div = document.createElement("div");
           div.className = "card visible";
-          div.textContent = text;
+          
+          const titleDiv = document.createElement("div");
+          titleDiv.className = "card-title";
+          titleDiv.textContent = title;
+
+          const meaningDiv = document.createElement("div");
+          meaningDiv.className = "card-meaning";
+          meaningDiv.textContent = meaning;
+
+          div.appendChild(titleDiv);
+          div.appendChild(meaningDiv);
           output.appendChild(div);
         });
       }, delay);
